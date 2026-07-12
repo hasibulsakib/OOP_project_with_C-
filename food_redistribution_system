@@ -1,1 +1,420 @@
+#include <iostream>
+#include <vector>
+#include <string>
+#include <fstream>
+#include <map>
+#include <algorithm>
+#include <ctime>
+#include <iomanip>
 
+using namespace std;
+
+// ==========================================
+// 1. ABSTRACTION & BASE CLASS (Inheritance)
+// ==========================================
+class User {
+protected:
+    string username;
+    string password;
+    string role; // "Customer", "Restaurant", "Admin"
+
+public:
+    User(string uname, string pass, string r) : username(uname), password(pass), role(r) {}
+    virtual ~User() {} 
+
+    string getUsername() const { return username; }
+    string getRole() const { return role; }
+    
+    virtual void displayMenu() = 0; 
+
+    bool checkPassword(string pass) const { return password == pass; }
+};
+
+// ==========================================
+// 2. DATA STRUCTURE FOR FOOD ITEM
+// ==========================================
+class FoodItem {
+private:
+    int id;
+    string name;
+    string restaurantName;
+    double originalPrice;
+    double discountPercentage;
+    int quantity;
+    string expiryTime; 
+
+public:
+    FoodItem() : id(0), originalPrice(0.0), discountPercentage(0.0), quantity(0) {}
+    FoodItem(int fId, string fName, string rName, double oPrice, double discount, int qty, string expiry)
+        : id(fId), name(fName), restaurantName(rName), originalPrice(oPrice), discountPercentage(discount), quantity(qty), expiryTime(expiry) {}
+
+    int getId() const { return id; }
+    string getName() const { return name; }
+    string getRestaurantName() const { return restaurantName; }
+    double getOriginalPrice() const { return originalPrice; }
+    double getDiscountPercentage() const { return discountPercentage; }
+    int getQuantity() const { return quantity; }
+    string getExpiryTime() const { return expiryTime; }
+
+    double getDiscountedPrice() const {
+        return originalPrice * (1.0 - (discountPercentage / 100.0));
+    }
+
+    void setQuantity(int qty) { quantity = qty; }
+
+    void displayFoodDetails() const {
+        cout << left << setw(5) << id 
+             << setw(20) << name 
+             << setw(20) << restaurantName 
+             << "$ " << setw(10) << fixed << setprecision(2) << originalPrice 
+             << setw(10) << (to_string((int)discountPercentage) + "%")
+             << "$ " << setw(10) << getDiscountedPrice()
+             << setw(10) << quantity 
+             << setw(10) << expiryTime << endl;
+    }
+};
+
+// ==========================================
+// 3. SYSTEM CORE ENGINE (Manages Data & Files)
+// ==========================================
+class FoodWasteSystem {
+private:
+    vector<FoodItem> foodList;
+    map<string, string> usersCredentials; 
+    map<string, string> userRoles;        
+    string currentLoggedInUser;
+    string currentRole;
+
+    const string foodFile = "food_items.txt";
+    const string userFile = "users.txt";
+
+public:
+    FoodWasteSystem() {
+        currentLoggedInUser = "";
+        currentRole = "";
+        loadUsersFromFile();
+        loadFoodFromFile();
+    }
+
+    ~FoodWasteSystem() {
+        saveUsersToFile();
+        saveFoodToFile();
+    }
+
+    void loadUsersFromFile() {
+        ifstream file(userFile.c_str());
+        if (!file.is_open()) return;
+        string uname, pass, role;
+        while (file >> uname >> pass >> role) {
+            usersCredentials[uname] = pass;
+            userRoles[uname] = role;
+        }
+        file.close();
+    }
+
+    // এই ফাংশনটি পুরনো কম্পাইলারে সাপোর্ট করার জন্য ঠিক করা হয়েছে
+    void saveUsersToFile() {
+        ofstream file(userFile.c_str());
+        for (map<string, string>::const_iterator it = usersCredentials.begin(); it != usersCredentials.end(); ++it) {
+            file << it->first << " " << it->second << " " << userRoles[it->first] << "\n";
+        }
+        file.close();
+    }
+
+    void loadFoodFromFile() {
+        ifstream file(foodFile.c_str());
+        if (!file.is_open()) return;
+        int id, qty;
+        string name, rName, expiry;
+        double oPrice, discount;
+        while (file >> id >> name >> rName >> oPrice >> discount >> qty >> expiry) {
+            foodList.push_back(FoodItem(id, name, rName, oPrice, discount, qty, expiry));
+        }
+        file.close();
+    }
+
+    void saveFoodToFile() {
+        ofstream file(foodFile.c_str());
+        for (size_t i = 0; i < foodList.size(); ++i) {
+            const FoodItem& item = foodList[i];
+            file << item.getId() << " " << item.getName() << " " << item.getRestaurantName() << " "
+                 << item.getOriginalPrice() << " " << item.getDiscountPercentage() << " "
+                 << item.getQuantity() << " " << item.getExpiryTime() << "\n";
+        }
+        file.close();
+    }
+
+    bool registerUser(string uname, string pass, string role) {
+        if (usersCredentials.find(uname) != usersCredentials.end()) {
+            cout << "❌ Error: Username already exists!\n";
+            return false;
+        }
+        usersCredentials[uname] = pass;
+        userRoles[uname] = role;
+        saveUsersToFile();
+        return true;
+    }
+
+    bool loginUser(string uname, string pass) {
+        if (usersCredentials.find(uname) != usersCredentials.end() && usersCredentials[uname] == pass) {
+            currentLoggedInUser = uname;
+            currentRole = userRoles[uname];
+            return true;
+        }
+        return false;
+    }
+
+    void logout() {
+        currentLoggedInUser = "";
+        currentRole = "";
+    }
+
+    string getCurrentUser() const { return currentLoggedInUser; }
+    string getCurrentRole() const { return currentRole; }
+    vector<FoodItem>& getFoodList() { return foodList; }
+
+    void addFoodItem(string name, string rName, double price, double discount, int qty, string expiry) {
+        int newId = foodList.empty() ? 1 : foodList.back().getId() + 1;
+        foodList.push_back(FoodItem(newId, name, rName, price, discount, qty, expiry));
+        saveFoodToFile();
+        cout << "✅ Food item added successfully with ID: " << newId << "\n";
+    }
+
+    void viewAvailableFood() {
+        if (foodList.empty()) {
+            cout << "ℹ️ No food items available right now.\n";
+            return;
+        }
+        cout << "\n---------------------------------------------------------------------------------------------------\n";
+        cout << left << setw(5) << "ID" << setw(20) << "Food Name" << setw(20) << "Restaurant" << setw(12) << "Orig. Price" << setw(10) << "Discount" << setw(12) << "Final Price" << setw(10) << "Qty" << setw(10) << "Expiry" << endl;
+        cout << "---------------------------------------------------------------------------------------------------\n";
+        for (size_t i = 0; i < foodList.size(); ++i) {
+            if (foodList[i].getQuantity() > 0) {
+                foodList[i].displayFoodDetails();
+            }
+        }
+        cout << "---------------------------------------------------------------------------------------------------\n";
+    }
+
+    void searchFood(string keyword) {
+        cout << "\n🔍 Search Results for '" << keyword << "':\n";
+        bool found = false;
+        for (size_t i = 0; i < foodList.size(); ++i) {
+            if ((foodList[i].getName().find(keyword) != string::npos || foodList[i].getRestaurantName().find(keyword) != string::npos) && foodList[i].getQuantity() > 0) {
+                foodList[i].displayFoodDetails();
+                found = true;
+            }
+        }
+        if (!found) cout << "No matching food items found.\n";
+    }
+
+    bool placeOrder(int foodId, int requestedQty) {
+        for (size_t i = 0; i < foodList.size(); ++i) {
+            if (foodList[i].getId() == foodId) {
+                if (foodList[i].getQuantity() < requestedQty) {
+                    cout << "❌ Error: Not enough quantity available! Available: " << foodList[i].getQuantity() << "\n";
+                    return false;
+                }
+                foodList[i].setQuantity(foodList[i].getQuantity() - requestedQty);
+                saveFoodToFile();
+                cout << "🛍️ Order Placed Successfully! Total Cost: $" << (foodList[i].getDiscountedPrice() * requestedQty) << "\n";
+                return true;
+            }
+        }
+        cout << "❌ Error: Food ID not found!\n";
+        return false;
+    }
+
+    void generateWasteReport() {
+        cout << "\n📊 --- SYSTEM SUSTAINABILITY & WASTE REPORT ---\n";
+        int totalSaved = 0;
+        int totalRemainingLog = 0;
+        for (size_t i = 0; i < foodList.size(); ++i) {
+            if (foodList[i].getQuantity() == 0) totalSaved++;
+            else totalRemainingLog++;
+        }
+        cout << "🌿 Total Food Batches Saved from Landfill: " << totalSaved << "\n";
+        cout << "⏳ Food Batches Currently active in system: " << totalRemainingLog << "\n";
+    }
+};
+
+// ==========================================
+// 4. DERIVED USER CLASSES
+// ==========================================
+class Customer : public User {
+private:
+    FoodWasteSystem& system;
+public:
+    Customer(string uname, string pass, FoodWasteSystem& sys) : User(uname, pass, "Customer"), system(sys) {}
+
+    void displayMenu() override {
+        int choice;
+        do {
+            cout << "\n👥 --- CUSTOMER MENU (Logged in: " << username << ") ---\n";
+            cout << "1. View Available Food Items (Discounted)\n";
+            cout << "2. Search Food Item or Restaurant\n";
+            cout << "3. Place an Order\n";
+            cout << "4. Logout\n";
+            cout << "Enter choice: ";
+            
+            if (!(cin >> choice)) {
+                cin.clear();
+                cin.ignore(10000, '\n');
+                cout << "Invalid Input! Try again.\n";
+                continue;
+            }
+
+            if (choice == 1) {
+                system.viewAvailableFood();
+            } else if (choice == 2) {
+                string keyword;
+                cout << "Enter search keyword (Food/Restaurant Name): ";
+                cin >> keyword;
+                system.searchFood(keyword);
+            } else if (choice == 3) {
+                int id, qty;
+                cout << "Enter Food ID to order: ";
+                cin >> id;
+                cout << "Enter Quantity: ";
+                cin >> qty;
+                system.placeOrder(id, qty);
+            }
+        } while (choice != 4);
+        system.logout();
+    }
+};
+
+class Restaurant : public User {
+private:
+    FoodWasteSystem& system;
+public:
+    Restaurant(string uname, string pass, FoodWasteSystem& sys) : User(uname, pass, "Restaurant"), system(sys) {}
+
+    void displayMenu() override {
+        int choice;
+        do {
+            cout << "\n🏪 --- RESTAURANT PORTAL (Logged in: " << username << ") ---\n";
+            cout << "1. Add Surplus/Leftover Food Item\n";
+            cout << "2. View My Listed Items\n";
+            cout << "3. Logout\n";
+            cout << "Enter choice: ";
+            
+            if (!(cin >> choice)) {
+                cin.clear();
+                cin.ignore(10000, '\n');
+                cout << "Invalid Input!\n";
+                continue;
+            }
+
+            if (choice == 1) {
+                string fName, expiry;
+                double price, discount;
+                int qty;
+                cout << "Enter Food Name (No spaces): "; cin >> fName;
+                cout << "Enter Original Price ($): "; cin >> price;
+                cout << "Enter Discount Percentage (e.g. 50): "; cin >> discount;
+                cout << "Enter Quantity: "; cin >> qty;
+                cout << "Enter Expiry Time (HH:MM): "; cin >> expiry;
+                
+                if (price < 0 || discount < 0 || discount > 100 || qty <= 0) {
+                    cout << "❌ Error: Invalid Price, Discount, or Quantity data!\n";
+                } else {
+                    system.addFoodItem(fName, username, price, discount, qty, expiry);
+                }
+            } else if (choice == 2) {
+                system.viewAvailableFood(); 
+            }
+        } while (choice != 3);
+        system.logout();
+    }
+};
+
+class Admin : public User {
+private:
+    FoodWasteSystem& system;
+public:
+    Admin(string uname, string pass, FoodWasteSystem& sys) : User(uname, pass, "Admin"), system(sys) {}
+
+    void displayMenu() override {
+        int choice;
+        do {
+            cout << "\n🛡️ --- ADMIN DASHBOARD (Logged in: " << username << ") ---\n";
+            cout << "1. System Monitor (View All Food Inventories)\n";
+            cout << "2. Generate Food Waste Reduction Report\n";
+            cout << "3. Logout\n";
+            cout << "Enter choice: ";
+            cin >> choice;
+
+            if (choice == 1) system.viewAvailableFood();
+            else if (choice == 2) system.generateWasteReport();
+        } while (choice != 3);
+        system.logout();
+    }
+};
+
+// ==========================================
+// 5. MAIN EXECUTION CONTROLLER
+// ==========================================
+int main() {
+    FoodWasteSystem system;
+    int mainChoice;
+
+    cout << "===================================================\n";
+    cout << "      WELCOME TO FOOD WASTE REDUCTION SYSTEM       \n";
+    cout << "===================================================\n";
+
+    do {
+        cout << "\nMAIN MENU:\n1. Register\n2. Login\n3. Exit\nEnter Choice: ";
+        if (!(cin >> mainChoice)) {
+            cin.clear();
+            cin.ignore(10000, '\n');
+            cout << "Invalid input option selected.\n";
+            continue;
+        }
+
+        if (mainChoice == 1) {
+            string uname, pass;
+            int roleType;
+            cout << "Enter Username (no spaces): "; cin >> uname;
+            cout << "Enter Password (no spaces): "; cin >> pass;
+            cout << "Select Role:\n1. Customer\n2. Restaurant\n3. Admin\nChoice: ";
+            cin >> roleType;
+
+            string role = "Customer";
+            if (roleType == 2) role = "Restaurant";
+            else if (roleType == 3) role = "Admin";
+
+            if (system.registerUser(uname, pass, role)) {
+                cout << "🎉 Registration Successful! You can now login.\n";
+            }
+        } 
+        else if (mainChoice == 2) {
+            string uname, pass;
+            cout << "Username: "; cin >> uname;
+            cout << "Password: "; cin >> pass;
+
+            if (system.loginUser(uname, pass)) {
+                User* activeUser = NULL;
+                
+                if (system.getCurrentRole() == "Customer") {
+                    activeUser = new Customer(uname, pass, system);
+                } else if (system.getCurrentRole() == "Restaurant") {
+                    activeUser = new Restaurant(uname, pass, system);
+                } else if (system.getCurrentRole() == "Admin") {
+                    activeUser = new Admin(uname, pass, system);
+                }
+
+                if (activeUser != NULL) {
+                    activeUser->displayMenu(); 
+                    delete activeUser;         
+                }
+            } else {
+                cout << "❌ Invalid Username or Password!\n";
+            }
+        }
+    } while (mainChoice != 3);
+
+    cout << "\n🌿 Thank you for contributing to reduce global food waste! Goodbye.\n";
+    return 0;
+}
+                  
