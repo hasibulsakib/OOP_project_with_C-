@@ -1,0 +1,167 @@
+e# Food Waste Reduction System — Code বুঝে বুঝে শেখা (OOP Notes)
+
+Sakib, তোমার code টা already ভালো structured। এখানে **কোথায় কী হচ্ছে** সেটা explain করলাম, আর কিছু জায়গা আরও simple করে দিলাম যাতে exam/viva তে explain করতে easy হয়।
+
+---
+
+## 1️⃣ Big Picture — Project টা কীভাবে organize করা আছে
+
+তোমার পুরো system টা **5 টা main part** এ ভাগ করা:
+
+```
+User (Abstract Base Class)
+  ├── Customer
+  ├── Restaurant
+  └── Admin
+
+FoodItem (শুধু data রাখার class — কোনো logic নাই)
+
+FoodWasteSystem (আসল Engine — সব logic + file handling এখানে)
+
+main() (Controller — user কে menu দেখায়, choice নেয়)
+```
+
+এটা **MVC-এর মতো pattern**: `FoodWasteSystem` হলো তোমার "brain" (logic), `User` derived classes হলো "interface" (কে কী দেখবে), `FoodItem` হলো শুধু "data holder"।
+
+---
+
+## 2️⃣ `User` class — কেন Abstract?
+
+```cpp
+class User {
+protected:
+    string username, password, role;
+public:
+    virtual void displayMenu() = 0;   // Pure virtual function
+};
+```
+
+**কী হচ্ছে এখানে:**
+- `virtual void displayMenu() = 0;` — এটাকে বলে **pure virtual function**। এর মানে `User` class এর কোনো object বানানো যাবে না (`User u;` লিখলে error দিবে)।
+- এটাই **Abstraction**: তুমি বলে দিচ্ছ "প্রত্যেক User এর একটা `displayMenu()` থাকতেই হবে, কিন্তু কীভাবে কাজ করবে সেটা যার যার role অনুযায়ী আলাদা হবে।"
+- `protected` variables ব্যবহার করা হয়েছে যাতে child class (Customer/Restaurant/Admin) সরাসরি এগুলো access করতে পারে, কিন্তু বাইরের কেউ পারবে না — এটাই **Encapsulation**।
+
+**Viva তে বলার মতো লাইন:** *"User হলো আমার abstract base class, যেটা define করে দেয় প্রত্যেক user type এর একটা common interface (displayMenu) থাকতেই হবে — কিন্তু implementation টা child class নিজের মতো করে দিবে। এটাকেই polymorphism বলে।"*
+
+---
+
+## 3️⃣ `FoodItem` class — শুধু Data রাখার জায়গা
+
+```cpp
+class FoodItem {
+private:
+    int id;
+    string name, restaurantName, expiryTime;
+    double originalPrice, discountPercentage;
+    int quantity;
+};
+```
+
+এটাকে বলে **POD-style class (Plain Old Data)** — এর কাজ শুধু একটা food item এর সব তথ্য একসাথে রাখা। এখানে কোনো "decision making" logic নাই, শুধু getter functions আছে যেগুলো data return করে।
+
+`getDiscountedPrice()` একমাত্র জায়গা যেখানে সামান্য calculation আছে:
+```cpp
+double getDiscountedPrice() const {
+    return originalPrice * (1.0 - (discountPercentage / 100.0));
+}
+```
+মানে ধরো price = 100, discount = 20% হলে → `100 * (1 - 0.20) = 80`
+
+---
+
+## 4️⃣ `FoodWasteSystem` class — আসল Engine
+
+এই class টাই তোমার project এর "heart"। এর ৩টা প্রধান দায়িত্ব:
+
+### a) File Handling (Data Persistence)
+```cpp
+void loadUsersFromFile() { ... }   // Program চালু হলে file থেকে data পড়ে
+void saveUsersToFile() { ... }     // Program বন্ধ হলে/change হলে file এ লিখে
+```
+**কেন দরকার?** Program বন্ধ করে আবার চালু করলে যাতে আগের সব user/food data হারিয়ে না যায়। এটাই বলে `users.txt` আর `food_items.txt` তে data save থাকছে।
+
+Destructor এ auto-save হয়:
+```cpp
+~FoodWasteSystem() {
+    saveUsersToFile();
+    saveFoodToFile();
+}
+```
+
+### b) Core Business Logic
+- `registerUser()` / `loginUser()` — authentication check করে (`map` দিয়ে username→password store)
+- `addFoodItem()` — নতুন খাবার add করে, auto ID generate করে (`foodList.back().getId() + 1`)
+- `placeOrder()` — quantity check করে, কম থাকলে reject করে, order successful হলে quantity কমায়
+- `generateWasteReport()` — কয়টা item সব বিক্রি হয়ে গেছে (saved from waste) সেটার count দেয়
+
+### c) কেন `map<string, string>` ব্যবহার করা হয়েছে?
+```cpp
+map<string, string> usersCredentials;  // username -> password
+map<string, string> userRoles;         // username -> role
+```
+Vector এ username খুঁজতে হলে পুরো list loop করতে হতো (slow, O(n))। `map` এ key দিয়ে সরাসরি খোঁজা যায় (O(log n)) — এটা Data Structures (CSE 221) এর সাথে মিলে যাচ্ছে যেটা তুমি পড়ছ।
+
+---
+
+## 5️⃣ Inheritance + Polymorphism — `Customer`, `Restaurant`, `Admin`
+
+```cpp
+class Customer : public User { ... };
+class Restaurant : public User { ... };
+class Admin : public User { ... };
+```
+
+তিনটাই `User` থেকে **inherit** করছে, আর তিনটাই নিজের মতো করে `displayMenu()` **override** করছে।
+
+`main()` এ ম্যাজিকটা এখানে:
+```cpp
+User* activeUser = NULL;
+if (role == "Customer") activeUser = new Customer(...);
+else if (role == "Restaurant") activeUser = new Restaurant(...);
+else if (role == "Admin") activeUser = new Admin(...);
+
+activeUser->displayMenu();   // ⭐ Runtime Polymorphism
+```
+
+**এইখানে কী হচ্ছে বুঝো:** `activeUser` টা `User*` type (base pointer), কিন্তু ভেতরে আসলে `Customer`, `Restaurant`, বা `Admin` — যেই object টাই থাকুক না কেন। `activeUser->displayMenu()` কল করলে C++ automatically বুঝে নেয় কোন version টা চালাতে হবে। এটাই **Runtime Polymorphism** (virtual function এর মাধ্যমে হয়)।
+
+**Viva Tip:** এটাকে বলে *"Dynamic dispatch"* — কোন function চলবে সেটা compile time এ নয়, বরং **runtime এ** ঠিক হয়, object এর actual type দেখে।
+
+---
+
+## 6️⃣ Reference (`&`) কেন সব জায়গায় ব্যবহার হয়েছে?
+
+```cpp
+class Customer : public User {
+private:
+    FoodWasteSystem& system;   // Reference, copy না
+```
+
+এখানে `FoodWasteSystem&` মানে — Customer এর ভেতরে পুরো System এর একটা **copy** বানানো হচ্ছে না, বরং `main()` এ যে একটাই `system` object আছে, সেটার প্রতি একটা **reference (alias)** রাখা হচ্ছে। ফলে Customer, Restaurant, Admin — সবাই একই data নিয়ে কাজ করছে, আলাদা আলাদা copy না।
+
+---
+
+## 7️⃣ ছোট একটা Improvement Suggestion (optional, শেখার জন্য)
+
+তোমার code এ `delete activeUser;` করার পর `User` এর destructor virtual করে রাখছ (`virtual ~User() {}`) — এটা **খুব ভালো practice**। কারণ base class pointer দিয়ে derived object delete করলে, virtual destructor না থাকলে **memory leak** হতে পারে। Exam এ এটা জিজ্ঞেস করলে বলবে:
+
+> "Base class এ virtual destructor না রাখলে, base pointer দিয়ে derived object delete করলে শুধু base part destruct হয়, derived part এর memory leak হয়ে যায়। তাই polymorphic base class এ destructor সবসময় virtual রাখা উচিত।"
+
+---
+
+## 8️⃣ Quick Concept-to-Code Map (Presentation/Viva চিট শীট)
+
+| OOP Concept | কোথায় আছে code এ |
+|---|---|
+| **Abstraction** | `User` class এর pure virtual `displayMenu()` |
+| **Encapsulation** | `private`/`protected` variables + getter functions (FoodItem, User) |
+| **Inheritance** | `Customer`, `Restaurant`, `Admin` → `User` থেকে inherit |
+| **Polymorphism** | `activeUser->displayMenu()` — runtime এ ঠিক হয় কোনটা চলবে |
+| **File Handling** | `ifstream`/`ofstream` দিয়ে `.txt` file এ data persist |
+| **STL `map`** | username↔password, username↔role fast lookup এর জন্য |
+| **STL `vector`** | সব food item এর dynamic list রাখতে |
+
+---
+
+### শেষ কথা
+তোমার code টা structurally ভালোই ছিল — main জিনিস হলো **কেন** প্রতিটা design choice করা হয়েছে সেটা বোঝা (যেমন কেন abstract class, কেন reference, কেন map)। Viva/presentation এ এই "কেন" গুলো explain করতে পারলেই OOP concept clear বলে ধরে নেওয়া হবে।
