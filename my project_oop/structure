@@ -1,0 +1,60 @@
+Header Files
+
+↓
+
+User Class
+
+↓
+
+FoodItem Class
+
+↓
+
+FoodWasteSystem
+
+    ↓
+    loadUsersFromFile()
+
+    saveUsersToFile()
+
+    loadFoodFromFile()
+
+    saveFoodToFile()
+
+    registerUser()
+
+    loginUser()
+
+    logout()
+
+    getCurrentUser()
+
+    getCurrentRole()
+
+    getFoodList()
+
+    addFoodItem()
+
+    viewAvailableFood()
+
+    searchFood()
+
+    placeOrder()
+
+    generateWasteReport()
+
+↓
+
+Customer Class
+
+↓
+
+Restaurant Class
+
+↓
+
+Admin Class
+
+↓
+
+main()
