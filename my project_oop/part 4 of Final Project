@@ -1,0 +1,411 @@
+🔴 PART 4 — Menu + Main Function
+
+এটা হচ্ছে program-এর control part।
+
+এখানে user decide করবে:
+
+Register
+Login
+Exit
+
+Login করার পরে role অনুযায়ী:
+
+Customer → Customer Menu
+Restaurant → Restaurant Menu
+Admin → Admin Menu
+1. Customer Menu
+void customerMenu()
+{
+    int choice;
+
+
+    do
+    {
+        cout << "\n========== CUSTOMER MENU ==========\n";
+
+
+        cout << "1. View Food\n";
+        cout << "2. Search Food\n";
+        cout << "3. Place Order\n";
+        cout << "4. Logout\n";
+
+
+        cout << "Enter Choice: ";
+        cin >> choice;
+
+
+
+
+        if(choice == 1)
+            viewFood();
+
+
+        else if(choice == 2)
+            searchFood();
+
+
+        else if(choice == 3)
+            placeOrder();
+
+
+        else if(choice == 4)
+            logout();
+
+
+        else
+            cout << "Invalid Choice!" << endl;
+
+
+    }while(choice != 4);
+}
+
+Customer তিনটা কাজ করতে পারে:
+
+Food দেখা
+Food search করা
+Order করা
+2. Restaurant Menu
+void restaurantMenu()
+{
+    int choice;
+
+
+    do
+    {
+        cout << "\n========== RESTAURANT MENU ==========\n";
+
+
+        cout << "1. Add Food\n";
+        cout << "2. View Food\n";
+        cout << "3. Logout\n";
+
+
+        cout << "Enter Choice: ";
+        cin >> choice;
+
+
+
+
+        if(choice == 1)
+            addFood();
+
+
+        else if(choice == 2)
+            viewFood();
+
+
+        else if(choice == 3)
+            logout();
+
+
+        else
+            cout << "Invalid Choice!" << endl;
+
+
+    }while(choice != 3);
+}
+
+Restaurant:
+
+Food add করতে পারবে
+Food দেখতে পারবে
+Logout করতে পারবে
+3. Admin Menu
+void adminMenu()
+{
+    int choice;
+
+
+    do
+    {
+        cout << "\n========== ADMIN MENU ==========\n";
+
+
+        cout << "1. View Food\n";
+        cout << "2. Generate Report\n";
+        cout << "3. Logout\n";
+
+
+        cout << "Enter Choice: ";
+        cin >> choice;
+
+
+
+
+        if(choice == 1)
+            viewFood();
+
+
+        else if(choice == 2)
+            report();
+
+
+        else if(choice == 3)
+            logout();
+
+
+        else
+            cout << "Invalid Choice!" << endl;
+
+
+    }while(choice != 3);
+}
+
+Admin:
+
+Food দেখতে পারে
+Report দেখতে পারে
+Logout করতে পারে
+4. Main Function
+
+Program এখান থেকে শুরু।
+
+int main()
+{
+    FoodWasteSystem system;
+
+
+    int choice;
+
+এখানে:
+
+FoodWasteSystem system;
+
+একটা object তৈরি হয়েছে।
+
+Constructor automatically call হবে।
+
+Main Menu
+do
+{
+    cout << "\n========== MAIN MENU ==========\n";
+
+
+    cout << "1. Register\n";
+    cout << "2. Login\n";
+    cout << "3. Exit\n";
+
+
+    cout << "Enter Choice: ";
+    cin >> choice;
+5. Registration
+if(choice == 1)
+{
+    string username;
+    string password;
+    int roleChoice;
+
+
+    cout << "Username: ";
+    cin >> username;
+
+
+    cout << "Password: ";
+    cin >> password;
+
+
+    cout << "\n1. Customer\n";
+    cout << "2. Restaurant\n";
+    cout << "3. Admin\n";
+
+
+    cout << "Choice: ";
+    cin >> roleChoice;
+
+Role select করা হচ্ছে।
+
+string role;
+
+
+if(roleChoice == 1)
+    role = "Customer";
+
+
+else if(roleChoice == 2)
+    role = "Restaurant";
+
+
+else if(roleChoice == 3)
+    role = "Admin";
+
+
+else
+{
+    cout << "Invalid Role!" << endl;
+    continue;
+}
+
+তারপর:
+
+system.registerUser(
+    username,
+    password,
+    role
+);
+
+Register function call হয়।
+
+সেখানে password hash হয়।
+
+6. Login
+else if(choice == 2)
+{
+    string username;
+    string password;
+
+
+    cout << "Username: ";
+    cin >> username;
+
+
+    cout << "Password: ";
+    cin >> password;
+
+
+
+
+    if(system.login(username, password))
+    {
+        cout << "Login Successful!" << endl;
+
+Login successful হলে role check হবে।
+
+if(system.getRole() == "Customer")
+    system.customerMenu();
+
+
+else if(system.getRole() == "Restaurant")
+    system.restaurantMenu();
+
+
+else if(system.getRole() == "Admin")
+    system.adminMenu();
+
+এটাই পুরো system-এর মূল flow।
+
+Example:
+
+যদি:
+
+Role = Customer
+
+তাহলে:
+
+customerMenu();
+
+চলবে।
+
+যদি:
+
+Role = Restaurant
+
+তাহলে:
+
+restaurantMenu();
+
+চলবে।
+
+7. Exit
+else if(choice == 3)
+{
+    cout << "Thank You!" << endl;
+}
+8. Main-এর complete code
+int main()
+            {
+                cout << "Invalid Role!" << endl;
+                continue;
+            }
+
+
+
+
+            system.registerUser(
+                username,
+                password,
+                role
+            );
+        }
+
+
+
+
+        // ================= LOGIN =================
+
+
+        else if(choice == 2)
+        {
+            string username;
+            string password;
+
+
+
+
+            cout << "Username: ";
+            cin >> username;
+
+
+            cout << "Password: ";
+            cin >> password;
+
+
+
+
+            if(system.login(username, password))
+            {
+                cout << "Login Successful!" << endl;
+
+
+
+
+                // Open menu according to role
+
+
+                if(system.getRole() == "Customer")
+                    system.customerMenu();
+
+
+                else if(system.getRole() == "Restaurant")
+                    system.restaurantMenu();
+
+
+                else if(system.getRole() == "Admin")
+                    system.adminMenu();
+            }
+
+
+            else
+            {
+                cout << "Invalid Username or Password!" << endl;
+            }
+        }
+
+
+
+
+        // ================= EXIT =================
+
+
+        else if(choice == 3)
+        {
+            cout << "Thank You!" << endl;
+        }
+
+
+
+
+        else
+        {
+            cout << "Invalid Choice!" << endl;
+        }
+
+
+
+
+    }while(choice != 3);
+
+
+
+
+    return 0;
+}
