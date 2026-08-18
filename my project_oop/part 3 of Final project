@@ -1,0 +1,408 @@
+🟠 PART 3 — Register + Login + Food + Order + Report
+
+এটাই system-এর সবচেয়ে important logic।
+
+এখানে:
+
+Register
+Login
+Logout
+Food add
+Food view
+Search
+Order
+Report
+
+সব হবে।
+
+1. Register
+bool registerUser(string username,
+                  string password,
+                  string role)
+{
+    for(int i = 0; i < users.size(); i++)
+    {
+        if(users[i].getUsername() == username)
+        {
+            cout << "Username already exists!" << endl;
+            return false;
+        }
+    }
+
+
+    string hashedPassword = hashPassword(password);
+
+
+    users.push_back(
+        User(username, hashedPassword, role)
+    );
+
+
+    saveUsers();
+
+
+    cout << "Registration Successful!" << endl;
+
+
+    return true;
+}
+Step-by-step
+
+প্রথমে check:
+
+if(users[i].getUsername() == username)
+
+username already আছে কি না।
+
+তারপর:
+
+string hashedPassword = hashPassword(password);
+
+Password hash করি।
+
+তারপর:
+
+users.push_back(...)
+
+নতুন user vector-এ রাখি।
+
+শেষে:
+
+saveUsers();
+
+File-এ save করি।
+
+2. Login
+bool login(string username, string password)
+{
+    string hashedPassword = hashPassword(password);
+
+
+    for(int i = 0; i < users.size(); i++)
+    {
+        if(users[i].getUsername() == username &&
+           users[i].getPassword() == hashedPassword)
+        {
+            currentUser = username;
+            currentRole = users[i].getRole();
+
+
+            return true;
+        }
+    }
+
+
+    return false;
+}
+সবচেয়ে important
+
+User password দেয়:
+
+1234
+
+আমরা আবার:
+
+hashPassword(password)
+
+করি।
+
+তারপর stored hash-এর সাথে compare করি।
+
+3. Logout
+void logout()
+{
+    currentUser = "";
+    currentRole = "";
+
+
+    cout << "Logout Successful!" << endl;
+}
+
+Current user এবং role empty করে দেয়।
+
+4. Get Role
+string getRole()
+{
+    return currentRole;
+}
+
+বর্তমানে logged-in user কী role-এর সেটা return করে।
+
+5. Add Food
+void addFood()
+{
+    string name;
+    string expiry;
+
+
+    double price;
+    double discount;
+
+
+    int quantity;
+
+
+    cout << "Food Name: ";
+    cin >> name;
+
+
+    cout << "Price: ";
+    cin >> price;
+
+
+    cout << "Discount (%): ";
+    cin >> discount;
+
+
+    cout << "Quantity: ";
+    cin >> quantity;
+
+
+    cout << "Expiry: ";
+    cin >> expiry;
+
+Restaurant-এর কাছ থেকে food information নিচ্ছে।
+
+Validation
+if(price < 0 ||
+   discount < 0 ||
+   discount > 100 ||
+   quantity <= 0)
+{
+    cout << "Invalid Input!" << endl;
+    return;
+}
+
+ভুল input prevent করার জন্য।
+
+Food ID
+int id = foods.size() + 1;
+
+নতুন food-এর ID তৈরি হচ্ছে।
+
+Food add
+foods.push_back(
+    FoodItem(
+        id,
+        name,
+        currentUser,
+        price,
+        discount,
+        quantity,
+        expiry
+    )
+);
+
+নতুন FoodItem object তৈরি করে vector-এ add করছি।
+
+6. View Food
+void viewFood()
+{
+    if(foods.empty())
+    {
+        cout << "No Food Available!" << endl;
+        return;
+    }
+
+
+    for(int i = 0; i < foods.size(); i++)
+    {
+        if(foods[i].getQuantity() > 0)
+        {
+            foods[i].display();
+        }
+    }
+}
+
+শুধু যেসব food-এর quantity 0 না, সেগুলো দেখাবে।
+
+7. Search Food
+void searchFood()
+{
+    string keyword;
+
+
+    cout << "Enter Food Name: ";
+    cin >> keyword;
+
+
+    bool found = false;
+
+
+    for(int i = 0; i < foods.size(); i++)
+    {
+        if(foods[i].getName() == keyword &&
+           foods[i].getQuantity() > 0)
+        {
+            foods[i].display();
+            found = true;
+        }
+    }
+
+
+    if(found == false)
+    {
+        cout << "Food Not Found!" << endl;
+    }
+}
+found কেন?
+
+Search করার পরে food পাওয়া গেছে কি না track করার জন্য।
+
+8. Place Order
+void placeOrder()
+{
+    int id;
+    int quantity;
+
+
+    cout << "Enter Food ID: ";
+    cin >> id;
+
+
+    cout << "Enter Quantity: ";
+    cin >> quantity;
+
+তারপর food ID search:
+
+for(int i = 0; i < foods.size(); i++)
+{
+    if(foods[i].getId() == id)
+
+Quantity check:
+
+if(foods[i].getQuantity() < quantity)
+{
+    cout << "Not Enough Quantity!" << endl;
+    return;
+}
+
+Total price:
+
+double total =
+    foods[i].getFinalPrice() * quantity;
+
+Quantity কমানো:
+
+foods[i].setQuantity(
+    foods[i].getQuantity() - quantity
+);
+
+তারপর:
+
+saveFoods();
+
+Updated quantity file-এ save হয়।
+
+9. Report
+void report()
+{
+    int available = 0;
+    int soldOut = 0;
+
+
+    for(int i = 0; i < foods.size(); i++)
+    {
+        if(foods[i].getQuantity() == 0)
+            soldOut++;
+        else
+            available++;
+    }
+
+
+    cout << "Available Food : "
+         << available << endl;
+
+
+    cout << "Sold Out Food : "
+         << soldOut << endl;
+}
+
+Quantity 0 হলে sold out।
+
+না হলে available।
+
+🟢 PART 3-এর code
+
+এই part-টা Part 2-এর FoodWasteSystem class-এর ভিতরে থাকবে:
+
+// Register user
+    }
+
+
+
+
+    for(int i = 0; i < foods.size(); i++)
+    {
+        if(foods[i].getId() == id)
+        {
+            if(foods[i].getQuantity() < quantity)
+            {
+                cout << "Not Enough Quantity!" << endl;
+                return;
+            }
+
+
+
+
+            double total =
+                foods[i].getFinalPrice() * quantity;
+
+
+
+
+            foods[i].setQuantity(
+                foods[i].getQuantity() - quantity
+            );
+
+
+
+
+            saveFoods();
+
+
+
+
+            cout << "\nOrder Placed Successfully!" << endl;
+            cout << "Total Price: " << total << endl;
+
+
+            return;
+        }
+    }
+
+
+
+
+    cout << "Food ID Not Found!" << endl;
+}
+
+
+
+
+// Report
+void report()
+{
+    int available = 0;
+    int soldOut = 0;
+
+
+    for(int i = 0; i < foods.size(); i++)
+    {
+        if(foods[i].getQuantity() == 0)
+            soldOut++;
+        else
+            available++;
+    }
+
+
+    cout << "\n========== REPORT ==========\n";
+
+
+    cout << "Available Food : "
+         << available << endl;
+
+
+    cout << "Sold Out Food : "
+         << soldOut << endl;
+}
