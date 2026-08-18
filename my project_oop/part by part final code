@@ -1,0 +1,607 @@
+এখন ৪ ভাগে বিস্তারিত Explanation
+🟢 PART 1 — Hashing + User + FoodItem
+
+এই part-এর মূল কাজ:
+
+Password
+   ↓
+Hash
+   ↓
+User
+
+
+Food
+   ↓
+FoodItem
+1. Hashing
+string hashPassword(string password)
+{
+    unsigned long long hash = 0;
+
+
+    for(int i = 0; i < password.length(); i++)
+    {
+        hash = hash * 31 + password[i];
+    }
+
+
+    return to_string(hash);
+}
+
+ধরো password:
+
+abc123
+
+এটা সরাসরি file-এ save না করে function-এর মধ্যে যায়।
+
+প্রতিটা character নিয়ে:
+
+hash = hash * 31 + password[i];
+
+calculation হয়।
+
+শেষে একটা নতুন value পাওয়া যায়।
+
+কেন?
+
+যাতে original password সরাসরি store না করি।
+
+Registration-এ:
+string hashedPassword = hashPassword(password);
+
+তারপর:
+
+users.push_back(
+    User(username, hashedPassword, role)
+);
+Login-এ আবার:
+string hashedPassword = hashPassword(password);
+
+তারপর:
+
+users[i].getPassword() == hashedPassword
+
+দুইটা same হলে login successful।
+
+Viva
+
+Sir: Hashing কেন ব্যবহার করেছ?
+
+"Sir, password directly store না করে একটা hash value store করার জন্য hashing ব্যবহার করেছি। Login-এর সময় entered password আবার hash করে stored hash-এর সাথে compare করি।"
+
+2. User Class
+class User
+{
+protected:
+    string username;
+    string password;
+    string role;
+
+User-এর তিনটা basic information:
+
+username
+password
+role
+Constructor
+User(string u, string p, string r)
+{
+    username = u;
+    password = p;
+    role = r;
+}
+
+Object তৈরি করার সময় data initialize করে।
+
+Getter
+string getUsername()
+{
+    return username;
+}
+
+এভাবে data বাইরে থেকে access করা যায়।
+
+3. FoodItem Class
+class FoodItem
+
+একটা food-এর information রাখে:
+
+ID
+Name
+Restaurant
+Price
+Discount
+Quantity
+Expiry
+Donation
+
+সবচেয়ে নতুন important অংশ:
+
+int donation;
+
+এটার অর্থ:
+
+0 → Normal Food
+1 → Charity Donation
+কেন এটা দরকার?
+
+যাতে Customer normal food দেখবে, আর Charity donation food দেখবে।
+
+Final Price
+double getFinalPrice()
+{
+    return price - (price * discount / 100);
+}
+
+যেমন:
+
+Price = 200
+Discount = 10%
+
+
+Final = 200 - 20
+      = 180
+      ------------------------------------------------------------------------------------------------------------------------------------
+🔵 PART 2 — Inheritance + File Handling + System
+
+এখানে OOP-এর Inheritance এবং file handling আছে।
+
+1. Customer
+class Customer : public User
+
+মানে Customer হচ্ছে User-এর child class।
+
+একইভাবে:
+
+class Restaurant : public User
+class Charity : public User
+class Admin : public User
+Structure:
+                 User
+                   |
+       +-----------+-----------+-----------+
+       |           |           |           |
+   Customer   Restaurant    Charity     Admin
+Viva:
+
+Sir: Inheritance কোথায়?
+
+"Sir, Customer, Restaurant, Charity and Admin classes are inherited from the User class."
+
+2. FoodWasteSystem
+class FoodWasteSystem
+{
+private:
+
+
+    vector<User> users;
+    vector<FoodItem> foods;
+
+
+    string currentUser;
+    string currentRole;
+
+এটা পুরো project-এর main controller।
+
+users
+
+সব user রাখে।
+
+foods
+
+সব food রাখে।
+
+currentUser
+
+বর্তমানে কে login করেছে।
+
+currentRole
+
+সে Customer / Restaurant / Charity / Admin কোনটা।
+
+3. File Handling
+User Load
+ifstream file("users.txt");
+
+File থেকে user পড়ার জন্য।
+
+while(file >> username >> password >> role)
+
+একেক line পড়ে।
+
+তারপর:
+
+users.push_back(
+    User(username, password, role)
+);
+
+User object তৈরি করে vector-এ রাখে।
+
+User Save
+ofstream file("users.txt");
+
+File-এ লিখতে ব্যবহার হচ্ছে।
+
+file << users[i].getUsername() << " "
+     << users[i].getPassword() << " "
+     << users[i].getRole()
+     << endl;
+Food File
+
+Food-এর ক্ষেত্রে extra একটা field আছে:
+
+donation
+
+তাই file format হবে:
+
+ID Name Restaurant Price Discount Quantity Expiry Donation
+
+Example:
+
+1 Burger ABC 200 10 5 10PM 0
+2 Rice ABC 100 0 10 8PM 1
+
+এখানে:
+
+0 = Normal
+1 = Charity
+
+
+----------------------------------------------------------------------------------------------------------------------------------------------------------
+🟠 PART 3 — Register + Login + Restaurant + Customer + Charity
+
+এটাই project-এর মূল functional part।
+
+1. Registration
+bool registerUser(string username,
+                  string password,
+                  string role)
+
+প্রথমে username already আছে কিনা check:
+
+if(users[i].getUsername() == username)
+
+থাকলে:
+
+return false;
+
+তারপর password hash:
+
+string hashedPassword =
+    hashPassword(password);
+
+তারপর user add:
+
+users.push_back(
+    User(username, hashedPassword, role)
+);
+
+শেষে:
+
+saveUsers();
+
+File-এ save।
+
+2. Login
+bool login(string username, string password)
+
+প্রথমে:
+
+string hashedPassword =
+    hashPassword(password);
+
+তারপর user search:
+
+for(int i = 0; i < users.size(); i++)
+
+Check:
+
+if(users[i].getUsername() == username &&
+   users[i].getPassword() == hashedPassword)
+
+Match হলে:
+
+currentUser = username;
+currentRole = users[i].getRole();
+3. Restaurant Food Add
+
+Restaurant login করে:
+
+1. Add Food
+2. View Food
+3. Logout
+
+Food add করার সময়:
+
+Food Name
+Price
+Discount
+Quantity
+Expiry
+
+এরপর:
+
+1. Normal Food
+2. Charity Donation
+
+এই অংশটাই Charity feature-এর মূল connection।
+
+যদি Restaurant দেয়:
+Food Type = 1
+
+তাহলে:
+
+donation = 0;
+
+এটা Customer দেখতে পারবে।
+
+যদি Restaurant দেয়:
+Food Type = 2
+
+তাহলে:
+
+donation = 1;
+
+এটা Charity-এর জন্য।
+
+4. Customer
+
+Customer শুধু:
+
+Normal Food
+
+দেখবে।
+
+কারণ:
+
+foods[i].getDonation() == 0
+
+এটা check করা হচ্ছে।
+
+Customer:
+
+View Food
+Search Food
+Place Order
+Logout
+
+করতে পারবে।
+
+5. Charity — সবচেয়ে important অংশ ❤️
+
+Charity login করলে:
+
+========== CHARITY MENU ==========
+
+
+1. View Donation Food
+2. Receive Food Donation
+3. Logout
+View Donation Food
+if(foods[i].getQuantity() > 0 &&
+   foods[i].getDonation() == 1)
+
+মানে:
+
+Quantity আছে
+Food donation-এর জন্য
+
+তাহলে Charity দেখতে পারবে।
+
+6. Charity Receive Donation
+
+Charity:
+
+Donation Food ID
+Quantity
+
+দেবে।
+
+তারপর check:
+
+if(foods[i].getQuantity() < quantity)
+
+যদি enough না থাকে:
+
+Not Enough Food Available!
+
+না হলে:
+
+foods[i].setQuantity(
+    foods[i].getQuantity() - quantity
+);
+
+Quantity কমবে।
+
+তারপর:
+
+saveFoods();
+
+File update হবে।
+
+Example
+
+Restaurant:
+
+Rice
+Quantity = 20
+Donation = YES
+
+Charity নেয়:
+
+Quantity = 8
+
+তাহলে:
+
+20 - 8 = 12
+
+এখন remaining donation food = 12
+---------------------------------------------------------------------------------------------------------------------------------------------------------
+
+🔴 PART 4 — Admin + Report + Menu + Main
+1. Admin
+
+Admin menu:
+
+1. View Food
+2. Generate Report
+3. Logout
+
+Report-এ:
+
+Available Food
+Sold Out Food
+Donation Food
+
+দেখানো হচ্ছে।
+
+2. Waste Report
+int available = 0;
+int soldOut = 0;
+int donationFood = 0;
+
+তারপর সব food-এর উপর loop:
+
+for(int i = 0; i < foods.size(); i++)
+
+Quantity 0 হলে:
+
+soldOut++;
+
+না হলে:
+
+available++;
+
+আর donation food হলে:
+
+donationFood++;
+3. Main Menu
+
+Program শুরু:
+
+FoodWasteSystem system;
+
+তারপর:
+
+1. Register
+2. Login
+3. Exit
+4. Role অনুযায়ী Menu
+
+Login successful হলে:
+
+if(system.getRole() == "Customer")
+{
+    system.customerMenu();
+}
+
+Restaurant হলে:
+
+else if(system.getRole() == "Restaurant")
+{
+    system.restaurantMenu();
+}
+
+Charity হলে:
+
+else if(system.getRole() == "Charity")
+{
+    system.charityMenu();
+}
+
+Admin হলে:
+
+else if(system.getRole() == "Admin")
+{
+    system.adminMenu();
+}
+🎯 এখন পুরো Project-এর Flow
+                         START
+                           |
+                           ↓
+                     MAIN MENU
+                    /    |     \
+                   /     |      \
+             Register   Login    Exit
+                         |
+                         ↓
+                  Username + Hash
+                         |
+                         ↓
+                    Login Match
+                         |
+          +--------------+--------------+--------------+
+          |              |              |              |
+          ↓              ↓              ↓              ↓
+      Customer      Restaurant       Charity         Admin
+          |              |              |              |
+          ↓              ↓              ↓              ↓
+      Buy Food       Add Food       Get Food        Report
+      Search         Normal/        Donation        View
+      View           Donation       Food
+                         |
+                         ↓
+                  FOOD WASTE REDUCTION
+                         |
+                         ↓
+              Excess Food → Charity
+                         |
+                         ↓
+                    LESS WASTE
+⭐ Viva-এর জন্য সবচেয়ে important প্রশ্নগুলো
+1. Project-এর main purpose কী?
+
+"Our project aims to reduce food waste by connecting restaurants, customers and charities. Restaurants can provide surplus food for charity, customers can purchase available food, and charities can receive donated food."
+
+2. Hashing কোথায়?
+
+hashPassword() function-এ।
+
+3. Password কখন hash হয়?
+
+Registration এবং Login—দুই সময়েই।
+
+4. Inheritance কোথায়?
+
+Customer, Restaurant, Charity, Admin → User থেকে inherit করেছে।
+
+5. Encapsulation কোথায়?
+
+User এবং FoodItem class-এর data members private/protected রেখে getter/setter ব্যবহার করেছি।
+
+6. Charity কী করে?
+
+Charity donation food দেখতে পারে এবং available donated food receive করতে পারে।
+
+7. Normal আর donation food কীভাবে আলাদা করেছ?
+int donation;
+0 = Normal
+1 = Donation
+8. Customer কেন donation food দেখতে পায় না?
+
+কারণ Customer-এর viewFood()-এ:
+
+foods[i].getDonation() == 0
+
+check করা হয়।
+
+9. Charity কেন normal food দেখতে পায় না?
+
+Charity-এর viewDonationFood()-এ:
+
+foods[i].getDonation() == 1
+
+check করা হয়।
+
+10. File handling কেন?
+
+Program বন্ধ করার পরেও user এবং food information যেন হারিয়ে না যায়, তাই file-এ data save করি।
+
+⚠️ একটা গুরুত্বপূর্ণ practical note
+
+এই code-এ food name, restaurant username, expiry cin >> দিয়ে নেওয়া হয়েছে, তাই এগুলোতে space দেওয়া যাবে না।
+
+যেমন:
+
+Chicken_Biryani
+ABC_Restaurant
+10PM
