@@ -1,0 +1,300 @@
+🔵 PART 2 — Inheritance + FoodWasteSystem + File Handling
+
+এখন আমরা system-এর main class বানাব।
+
+এই part-এর কাজ:
+
+Customer/Restaurant/Admin তৈরি
+Food ও User store করা
+File থেকে data load করা
+File-এ data save করা
+1. Customer Class
+class Customer : public User
+{
+public:
+
+
+    Customer(string u, string p)
+        : User(u, p, "Customer")
+    {
+    }
+};
+
+এখানে:
+
+class Customer : public User
+
+মানে Customer হচ্ছে User-এর child class।
+
+Inheritance:
+        User
+       / | \
+      /  |  \
+Customer Restaurant Admin
+Viva:
+
+Sir: Inheritance কোথায়?
+
+Customer, Restaurant, এবং Admin class User class থেকে inherit করেছে।
+
+2. Restaurant Class
+class Restaurant : public User
+{
+public:
+
+
+    Restaurant(string u, string p)
+        : User(u, p, "Restaurant")
+    {
+    }
+};
+
+Restaurant-এর role automatically:
+
+Restaurant
+3. Admin Class
+class Admin : public User
+{
+public:
+
+
+    Admin(string u, string p)
+        : User(u, p, "Admin")
+    {
+    }
+};
+
+Admin-এর role:
+
+Admin
+4. FoodWasteSystem Class
+class FoodWasteSystem
+{
+private:
+
+
+    vector<User> users;
+    vector<FoodItem> foods;
+
+
+    string currentUser;
+    string currentRole;
+কেন vector?
+
+আমাদের অনেক user থাকতে পারে:
+
+User 1
+User 2
+User 3
+...
+
+তাই:
+
+vector<User> users;
+
+একইভাবে অনেক food:
+
+vector<FoodItem> foods;
+5. Constructor
+FoodWasteSystem()
+{
+    currentUser = "";
+    currentRole = "";
+
+
+    loadUsers();
+    loadFoods();
+}
+
+System object তৈরি হলেই:
+
+current user empty হয়
+current role empty হয়
+users file থেকে load হয়
+food file থেকে load হয়
+6. Load Users
+void loadUsers()
+{
+    ifstream file("users.txt");
+
+
+    string username;
+    string password;
+    string role;
+
+
+    while(file >> username >> password >> role)
+    {
+        users.push_back(
+            User(username, password, role)
+        );
+    }
+
+
+    file.close();
+}
+কী হচ্ছে?
+
+users.txt file থেকে data পড়ছি।
+
+ধরো file:
+
+sakib 123456 Customer
+rahim 456789 Restaurant
+
+তাহলে দুইটা User object তৈরি হয়ে vector-এ যাবে।
+
+7. Save Users
+void saveUsers()
+{
+    ofstream file("users.txt");
+
+
+    for(int i = 0; i < users.size(); i++)
+    {
+        file << users[i].getUsername() << " "
+             << users[i].getPassword() << " "
+             << users[i].getRole()
+             << endl;
+    }
+
+
+    file.close();
+}
+কী হচ্ছে?
+
+Vector-এর সব user file-এ save হচ্ছে।
+
+8. Load Foods
+void loadFoods()
+{
+    ifstream file("food_items.txt");
+
+
+    int id;
+    int quantity;
+
+
+    string name;
+    string restaurant;
+    string expiry;
+
+
+    double price;
+    double discount;
+
+
+    while(file >> id
+              >> name
+              >> restaurant
+              >> price
+              >> discount
+              >> quantity
+              >> expiry)
+    {
+        foods.push_back(
+            FoodItem(
+                id,
+                name,
+                restaurant,
+                price,
+                discount,
+                quantity,
+                expiry
+            )
+        );
+    }
+
+
+    file.close();
+}
+
+Food file থেকে food data নিয়ে FoodItem object বানানো হচ্ছে।
+
+9. Save Foods
+void saveFoods()
+{
+    ofstream file("food_items.txt");
+
+
+    for(int i = 0; i < foods.size(); i++)
+    {
+        file << foods[i].getId() << " "
+             << foods[i].getName() << " "
+             << foods[i].getRestaurant() << " "
+             << foods[i].getPrice() << " "
+             << foods[i].getDiscount() << " "
+             << foods[i].getQuantity() << " "
+             << foods[i].getExpiry()
+             << endl;
+    }
+
+
+    file.close();
+}
+
+Food vector-এর data file-এ save হয়।
+
+🟢 PART 2-এর পুরো code
+// ================= CUSTOMER =================
+
+
+        string name;
+        string restaurant;
+        string expiry;
+
+
+        double price;
+        double discount;
+
+
+        while(file >> id
+                  >> name
+                  >> restaurant
+                  >> price
+                  >> discount
+                  >> quantity
+                  >> expiry)
+        {
+            foods.push_back(
+                FoodItem(
+                    id,
+                    name,
+                    restaurant,
+                    price,
+                    discount,
+                    quantity,
+                    expiry
+                )
+            );
+        }
+
+
+        file.close();
+    }
+
+
+
+
+    // Save foods to file
+    void saveFoods()
+    {
+        ofstream file("food_items.txt");
+
+
+        for(int i = 0; i < foods.size(); i++)
+        {
+            file << foods[i].getId() << " "
+                 << foods[i].getName() << " "
+                 << foods[i].getRestaurant() << " "
+                 << foods[i].getPrice() << " "
+                 << foods[i].getDiscount() << " "
+                 << foods[i].getQuantity() << " "
+                 << foods[i].getExpiry()
+                 << endl;
+        }
+
+
+        file.close();
+    }
+};
