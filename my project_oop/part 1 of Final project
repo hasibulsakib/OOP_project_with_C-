@@ -1,0 +1,421 @@
+🟢 PART 1 — Hashing + User Class + FoodItem Class
+
+এই part-এর মূল কাজ হলো:
+
+Password hash করা
+User-এর information রাখা
+Food-এর information রাখা
+1. Header files
+#include <iostream>
+#include <vector>
+#include <string>
+#include <fstream>
+
+
+using namespace std;
+কী হচ্ছে?
+
+আমরা কয়েকটা library নিচ্ছি।
+
+Library	কাজ
+iostream	cin, cout
+vector	অনেকগুলো data রাখার জন্য
+string	text/string রাখার জন্য
+fstream	file read/write করার জন্য
+Viva:
+
+Sir: iostream কেন?
+
+cin এবং cout ব্যবহার করার জন্য।
+
+Sir: vector কেন?
+
+একাধিক User এবং FoodItem object একসাথে রাখার জন্য।
+
+Sir: fstream কেন?
+
+File থেকে data read এবং file-এ data save করার জন্য।
+
+2. Simple Hashing
+string hashPassword(string password)
+{
+    unsigned long long hash = 0;
+
+
+    for(int i = 0; i < password.length(); i++)
+    {
+        hash = hash * 31 + password[i];
+    }
+
+
+    return to_string(hash);
+}
+কী হচ্ছে?
+
+ধরো user password দিল:
+
+1234
+
+আমরা সরাসরি 1234 save করছি না।
+
+প্রথমে:
+
+hashPassword("1234")
+
+চালিয়ে একটা অন্য number তৈরি করছি।
+
+তারপর সেই number save করছি।
+
+কেন?
+
+Password সরাসরি file-এ রাখার পরিবর্তে একটা converted value রাখার জন্য।
+
+সবচেয়ে important line:
+hash = hash * 31 + password[i];
+
+প্রতিটা character নিয়ে calculation হচ্ছে।
+
+Loop কেন?
+
+Password-এর প্রত্যেকটা character নেওয়ার জন্য।
+
+for(int i = 0; i < password.length(); i++)
+to_string() কেন?
+
+আমাদের hash হচ্ছে number।
+
+কিন্তু User class-এ password আমরা string হিসেবে রাখছি।
+
+তাই:
+
+return to_string(hash);
+
+দিয়ে number → string করছি।
+
+Viva answer:
+
+Sir: Hashing কী?
+
+Hashing হলো এমন একটা process যেখানে input data-কে একটি অন্য value-তে convert করা হয়।
+
+Sir: Password কেন hash করেছ?
+
+Original password সরাসরি store না করে তার hash value store করার জন্য।
+
+Sir: Login-এর সময় কী করবে?
+
+User-এর দেওয়া password আবার hash করব এবং stored hash-এর সাথে compare করব।
+
+3. User Class
+class User
+{
+protected:
+    string username;
+    string password;
+    string role;
+
+
+public:
+
+
+    User(string u, string p, string r)
+    {
+        username = u;
+        password = p;
+        role = r;
+    }
+
+
+    string getUsername()
+    {
+        return username;
+    }
+
+
+    string getPassword()
+    {
+        return password;
+    }
+
+
+    string getRole()
+    {
+        return role;
+    }
+};
+এই class-এর কাজ কী?
+
+User-এর তিনটা information রাখে:
+
+username
+password
+role
+
+যেমন:
+
+Username = Sakib
+Password = hashed value
+Role = Customer
+protected কেন?
+protected:
+    string username;
+    string password;
+    string role;
+
+protected দিলে class নিজে এবং child class এগুলো access করতে পারে।
+
+এটা পরে inheritance-এর জন্য useful।
+
+Constructor
+User(string u, string p, string r)
+{
+    username = u;
+    password = p;
+    role = r;
+}
+
+Object তৈরি হওয়ার সময় automatically এই constructor call হয়।
+
+যেমন:
+
+User u("Sakib", "12345", "Customer");
+
+তখন:
+
+username = Sakib
+password = 12345
+role = Customer
+Getter কেন?
+string getUsername()
+{
+    return username;
+}
+
+এগুলো দিয়ে private/protected data safely access করা যায়।
+
+4. FoodItem Class
+class FoodItem
+{
+private:
+    int id;
+    string name;
+    string restaurant;
+    double price;
+    double discount;
+    int quantity;
+    string expiry;
+
+এখানে একটা food-এর সব information রাখা হচ্ছে।
+
+যেমন:
+
+ID = 1
+Food = Burger
+Restaurant = ABC
+Price = 200
+Discount = 20
+Quantity = 5
+Expiry = 10PM
+Constructor
+FoodItem(int i, string n, string r,
+         double p, double d,
+         int q, string e)
+{
+    id = i;
+    name = n;
+    restaurant = r;
+    price = p;
+    discount = d;
+    quantity = q;
+    expiry = e;
+}
+
+Food object তৈরি করার সময় সব information initialize করে।
+
+Getter
+int getId()
+{
+    return id;
+}
+
+
+string getName()
+{
+    return name;
+}
+
+
+string getRestaurant()
+{
+    return restaurant;
+}
+
+
+double getPrice()
+{
+    return price;
+}
+
+
+double getDiscount()
+{
+    return discount;
+}
+
+
+int getQuantity()
+{
+    return quantity;
+}
+
+
+string getExpiry()
+{
+    return expiry;
+}
+
+এগুলো দিয়ে FoodItem-এর data নেওয়া হয়।
+
+Quantity change
+void setQuantity(int q)
+{
+    quantity = q;
+}
+
+Order দেওয়ার পরে quantity কমানোর জন্য।
+
+Discount calculation
+double getFinalPrice()
+{
+    return price - (price * discount / 100);
+}
+
+ধরো:
+
+Price = 100
+Discount = 20%
+
+তাহলে:
+
+100 - (100 × 20 / 100)
+= 80
+
+Final price = 80
+
+Display function
+void display()
+{
+    cout << "ID          : " << id << endl;
+    cout << "Food        : " << name << endl;
+    cout << "Restaurant  : " << restaurant << endl;
+    cout << "Price       : " << price << endl;
+    cout << "Discount    : " << discount << "%" << endl;
+    cout << "Final Price : " << getFinalPrice() << endl;
+    cout << "Quantity    : " << quantity << endl;
+    cout << "Expiry      : " << expiry << endl;
+    cout << "-----------------------------" << endl;
+}
+
+একটা food-এর সব information screen-এ দেখায়।
+
+🟢 PART 1-এর পুরো code
+#include <iostream>
+#include <vector>
+#include <string>
+#include <fstream>
+
+
+using namespace std;
+
+
+
+
+// ================= HASHING =================
+
+
+string hashPassword(string password)
+{
+    unsigned long long hash = 0;
+
+
+    for(int i = 0; i < password.length(); i++)
+    {
+        hash = hash * 31 + password[i];
+    }
+
+
+    return to_string(hash);
+}
+
+
+
+
+// ================= USER CLASS =================
+
+
+class User
+{
+protected:
+    string username;
+    string password;
+    string role;
+
+
+public:
+
+
+    User(string u, string p, string r)
+    {
+        username = u;
+        password = p;
+        role = r;
+    }
+
+
+    string getUsername()
+    {
+        return username;
+    }
+
+
+    string getPassword()
+    {
+        return password;
+    }
+
+
+    string getRole()
+    {
+        return role;
+    }
+};
+
+
+
+
+// ================= FOOD ITEM CLASS =================
+
+
+class FoodItem
+{
+private:
+    int id;
+    string name;
+    string restaurant;
+    double price;
+    double discount;
+    int quantity;
+    string expiry;
+এই Part-এর OOP topics
+
+Class: User, FoodItem
+
+Object: পরে এই class থেকে object তৈরি হবে।
+
+Constructor: User(...), FoodItem(...)
+
+Encapsulation: private data + getter/setter
+
+Function: getId(), display(), getFinalPrice()
+
+Hashing: hashPassword()
